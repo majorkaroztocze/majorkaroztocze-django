@@ -40,7 +40,7 @@ DEBUG = False
 
 
 ALLOWED_HOSTS = [
-    'majorkaroztocze-production.up.railway.app',
+    'majorkaroztocze-django-production.up.railway.app',
     '127.0.0.1',
     'localhost'
 ]
