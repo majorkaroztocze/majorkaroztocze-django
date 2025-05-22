@@ -32,3 +32,4 @@ class BlogPostAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title',)}
     list_display = ('title', 'created_at', 'updated_at')
     search_fields = ('title', 'content')
+    
