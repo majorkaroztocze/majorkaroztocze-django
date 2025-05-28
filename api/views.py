@@ -1,12 +1,13 @@
 from django.db import models
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from django.db.models import Sum, Q
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from cloudinary.uploader import upload as cloudinary_upload
 import mimetypes
+from django.core.exceptions import ValidationError as DjangoValidationError
 from .models import KayakReservation, KayakRoute, KayakRentalSettings, CabinReservation, Cabin, CampingReservation, CampingPricing, BlogPost
 from .serializers import KayakReservationSerializer, KayakRouteSerializer, CabinReservationSerializer, CabinSerializer, CampingReservationSerializer, BlogPostSerializer
 
@@ -80,10 +81,14 @@ def check_cabin_availability(request):
 def create_cabin_reservation(request):
     data = request.data.copy()
     data.pop('total_price', None)
-    serializer = CabinReservationSerializer(data=request.data)
+    serializer = CabinReservationSerializer(data=data)
+
     if serializer.is_valid():
-        serializer.save()
-        return Response({"message": "Rezerwacja zapisana!"}, status=201)
+        try:
+            serializer.save()
+            return Response({"message": "Rezerwacja zapisana!"}, status=201)
+        except DjangoValidationError as e:
+            return Response({"error": e.message}, status=400)
 
     return Response(serializer.errors, status=400)
 
@@ -113,11 +118,13 @@ def get_camping_prices(request):
 
 @api_view(['POST'])
 def create_camping_reservation(request):
-    """Tworzy nową rezerwację pola namiotowego"""
     serializer = CampingReservationSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save()
-        return Response({"message": "Rezerwacja zapisana!"}, status=201)
+        try:
+            serializer.save()
+            return Response({"message": "Rezerwacja zapisana!"}, status=201)
+        except DjangoValidationError as e:
+            return Response({"error": e.message}, status=400)
 
     return Response(serializer.errors, status=400)
 
