@@ -88,11 +88,15 @@ class CabinReservation(models.Model):
     email = models.EmailField()
     start_date = models.DateField()
     end_date = models.DateField()
-    cabin = models.ForeignKey(Cabin, on_delete=models.CASCADE)
+    cabin = models.ForeignKey('Cabin', on_delete=models.CASCADE)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
+    def clean(self):
+        if self.end_date < self.start_date:
+            raise ValidationError("Data zakończenia nie może być wcześniejsza niż data rozpoczęcia.")
+
     def save(self, *args, **kwargs):
-        # Obliczenie ceny rezerwacji
+        self.clean()  # zapewnij, że walidacja się wykona
         nights = (self.end_date - self.start_date).days
         self.total_price = nights * self.cabin.price_per_night
         super().save(*args, **kwargs)
@@ -118,10 +122,17 @@ class CampingReservation(models.Model):
     children = models.PositiveIntegerField(default=0)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
+    def clean(self):
+        if self.end_date < self.start_date:
+            raise ValidationError("Data zakończenia nie może być wcześniejsza niż data rozpoczęcia.")
+
     def save(self, *args, **kwargs):
+        self.clean()  # upewnij się, że walidacja zadziała
         nights = (self.end_date - self.start_date).days
-        pricing = CampingPricing.objects.first()  # Pobieramy aktualne ceny
-        self.total_price = (self.adults * pricing.price_per_adult + self.children * pricing.price_per_child) * nights
+        pricing = CampingPricing.objects.first()  # Zakładamy, że tylko jeden zestaw cen
+        self.total_price = (
+            (self.adults * pricing.price_per_adult + self.children * pricing.price_per_child) * nights
+        )
         super().save(*args, **kwargs)
 
     def __str__(self):
